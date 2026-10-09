@@ -45,6 +45,7 @@ dependencies:
   connectivity_plus: ^7.3.2
   uuid: ^4.6.0
   intl: ^0.20.3
+  image_picker: ^1.2.4
 
 # Encrypted local database: package:sqlite3 bundles SQLite3 Multiple Ciphers
 # (MIT licensed) instead of plain SQLite; the database is keyed per user.

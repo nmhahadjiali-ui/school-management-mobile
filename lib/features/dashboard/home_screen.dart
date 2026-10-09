@@ -9,6 +9,7 @@ import '../academics/academic_screens.dart';
 import '../attendance/attendance_screens.dart';
 import '../communication/communication_screens.dart';
 import '../finance/finance_screens.dart';
+import '../platform/platform_screens.dart';
 
 /// Focused, role-specific home screens (not a shrunken web dashboard).
 class HomeScreen extends ConsumerWidget {
@@ -17,6 +18,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ctxAsync = ref.watch(userContextProvider);
+    // Super admin: the web's platform dashboard (online-only, nothing cached).
+    if (ctxAsync.value?.isSuperAdmin == true && ctxAsync.value!.accessActive) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Platform Administration')),
+        body: const PlatformDashboard(),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(ctxAsync.value?.schoolName ?? 'School'),
@@ -262,6 +270,11 @@ class MoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = ref.watch(userContextProvider).value;
     final items = <(IconData, String, String)>[
+      if (ctx?.isSuperAdmin == true) ...[
+        (Icons.apartment, 'Schools', '/platform/schools'),
+        (Icons.people_outline, 'Users', '/platform/users'),
+        (Icons.settings_outlined, 'Platform settings', '/platform/settings'),
+      ],
       if (ctx?.has('schedules') == true) (Icons.event, 'Schedule', '/schedule'),
       if (ctx?.has('coursework') == true && (ctx!.isTeacher || ctx.isFamily)) (Icons.assignment_outlined, 'Assignments', '/assignments'),
       if (ctx?.has('grades') == true && (ctx!.isTeacher || ctx.isFamily)) (Icons.grade_outlined, 'Grades', '/grades'),
@@ -277,7 +290,7 @@ class MoreScreen extends ConsumerWidget {
           ListTile(
             leading: CircleAvatar(child: Text(ctx.firstName.isEmpty ? '?' : ctx.firstName[0])),
             title: Text(ctx.fullName),
-            subtitle: Text('${capitalize(ctx.role)} · ${ctx.email}'),
+            subtitle: Text('${roleLabels[ctx.role] ?? capitalize(ctx.role)} · ${ctx.email}'),
           ),
         const Divider(),
         for (final (icon, label, route) in items) ListTile(leading: Icon(icon), title: Text(label), onTap: () => context.push(route)),
@@ -295,6 +308,7 @@ class PrimaryTab extends ConsumerWidget {
 
   static (IconData, String) labelFor(UserContext? ctx) {
     if (ctx == null) return (Icons.apps, 'Browse');
+    if (ctx.isSuperAdmin) return (Icons.apartment, 'Schools');
     if (ctx.canTakeAttendance) return (Icons.how_to_reg, 'Classes');
     if (ctx.isParent) return (Icons.family_restroom, 'Children');
     if (ctx.isStudent) return (Icons.event, 'Schedule');
@@ -306,6 +320,7 @@ class PrimaryTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = ref.watch(userContextProvider).value;
     if (ctx == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (ctx.isSuperAdmin) return const SchoolsScreen();
     if (ctx.canTakeAttendance) return const ClassesScreen();
     if (ctx.isParent) return const _ChildrenTab();
     if (ctx.isStudent) return const ScheduleScreen();

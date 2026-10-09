@@ -8,6 +8,7 @@ import '../../features/auth/login_screen.dart';
 import '../../features/communication/communication_screens.dart';
 import '../../features/dashboard/home_screen.dart';
 import '../../features/finance/finance_screens.dart';
+import '../../features/platform/platform_screens.dart';
 import '../session/session.dart';
 
 /// Re-runs redirects when the session opens or closes.
@@ -40,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(routes: [GoRoute(path: '/home', builder: (_, _) => const HomeScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/main', builder: (_, _) => const PrimaryTab())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/notifications', builder: (_, _) => const _ThirdTab())]),
           StatefulShellBranch(routes: [GoRoute(path: '/more', builder: (_, _) => const MoreScreen())]),
         ],
       ),
@@ -55,6 +56,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/announcements/:id', builder: (_, s) => AnnouncementDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/children/:id', builder: (_, s) => ChildScreen(studentId: s.pathParameters['id']!)),
       GoRoute(path: '/sync', builder: (_, _) => const SyncCenterScreen()),
+      // Super admin (the web's /platform pages). The database re-checks every action.
+      GoRoute(path: '/platform/schools', builder: (_, _) => const SchoolsScreen()),
+      GoRoute(path: '/platform/schools/new', builder: (_, _) => const NewSchoolScreen()),
+      GoRoute(path: '/platform/schools/:id', builder: (_, s) => SchoolDetailScreen(schoolId: s.pathParameters['id']!)),
+      GoRoute(path: '/platform/users', builder: (_, _) => const PlatformUsersScreen()),
+      GoRoute(path: '/platform/settings', builder: (_, _) => const PlatformSettingsScreen()),
       GoRoute(
         path: '/finance',
         builder: (context, s) => Consumer(builder: (context, ref, _) {
@@ -75,6 +82,7 @@ class _MainShell extends ConsumerWidget {
     final ctx = ref.watch(userContextProvider).value;
     final (icon, label) = PrimaryTab.labelFor(ctx);
     final unread = (ref.watch(notificationsProvider).value ?? const []).where((n) => n.readAt == null).length;
+    final platform = ctx?.isSuperAdmin == true;
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
@@ -83,13 +91,25 @@ class _MainShell extends ConsumerWidget {
         destinations: [
           const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(icon), label: label),
-          NavigationDestination(
-            icon: Badge(isLabelVisible: unread > 0, label: Text('$unread'), child: const Icon(Icons.notifications_outlined)),
-            label: 'Alerts',
-          ),
+          if (platform)
+            const NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Users')
+          else
+            NavigationDestination(
+              icon: Badge(isLabelVisible: unread > 0, label: Text('$unread'), child: const Icon(Icons.notifications_outlined)),
+              label: 'Alerts',
+            ),
           const NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
         ],
       ),
     );
   }
+}
+
+/// Third tab: notifications, or all users for the super admin (who has no school notifications).
+class _ThirdTab extends ConsumerWidget {
+  const _ThirdTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      ref.watch(userContextProvider).value?.isSuperAdmin == true ? const PlatformUsersScreen() : const NotificationsScreen();
 }

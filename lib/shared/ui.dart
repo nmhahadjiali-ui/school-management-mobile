@@ -65,6 +65,8 @@ class StatusChip extends StatelessWidget {
   final String status;
 
   static const _colors = {
+    'active': Colors.green,
+    'inactive': Colors.red,
     'present': Colors.green,
     'paid': Colors.green,
     'published': Colors.green,
