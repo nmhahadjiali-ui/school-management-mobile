@@ -60,7 +60,10 @@ class PlatformApi {
           _db.from('school_features').select('feature_key, enabled').eq('school_id', schoolId),
         ]);
         final enabled = {for (final f in r[1]) f['feature_key']: f['enabled'] == true};
-        return [for (final f in r[0]) {'key': f['key'], 'name': f['name'], 'description': f['description'], 'enabled': enabled[f['key']] ?? false}];
+        return [
+          for (final f in r[0])
+            {'key': f['key'], 'name': f['name'], 'description': f['description'], 'enabled': enabled[f['key']] ?? false, 'availability': f['availability'] ?? 'available'},
+        ];
       });
 
   Future<void> setFeature(String schoolId, String key, bool enabled) => _run(() => _db

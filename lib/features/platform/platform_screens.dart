@@ -598,13 +598,17 @@ class _FeatureTogglesState extends ConsumerState<_FeatureToggles> {
       loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
       error: (e, _) => ListTile(leading: const Icon(Icons.error_outline), title: Text(toAppError(e).message)),
       data: (rows) => Column(children: [
-        for (final f in rows)
-          SwitchListTile(
-            title: Text('${f['name']}'),
-            subtitle: f['description'] == null ? null : Text('${f['description']}', style: const TextStyle(fontSize: 12)),
-            value: f['enabled'] == true,
-            onChanged: _busy.contains(f['key']) ? null : (v) => _toggle('${f['key']}', v),
-          ),
+        for (final (group, items) in groupFeatures(rows)) ...[
+          FeatureGroupHeader(group, items.length),
+          for (final f in items)
+            SwitchListTile(
+              title: Text('${f['name']}'),
+              subtitle: f['description'] == null ? null : Text('${f['description']}', style: const TextStyle(fontSize: 12)),
+              // Coming soon: cannot be enabled. Always included: the switch has no effect.
+              value: f['enabled'] == true && f['availability'] != 'coming_soon',
+              onChanged: _busy.contains(f['key']) || f['availability'] != 'available' ? null : (v) => _toggle('${f['key']}', v),
+            ),
+        ],
       ]),
     );
   }
@@ -943,15 +947,58 @@ class PlatformSettingsScreen extends ConsumerWidget {
                 subtitle: Text(
                     "Optional modules available to schools. Enable them per school from each school's page. New features are added through database migrations."),
               ),
-              const Divider(),
-              for (final f in rows)
-                ListTile(
-                  title: Text('${f['name']}'),
-                  subtitle: Text([if (f['description'] != null) '${f['description']}', '${f['key']}'].join('\n')),
-                  isThreeLine: f['description'] != null,
-                ),
+              for (final (group, items) in groupFeatures(rows)) ...[
+                FeatureGroupHeader(group, items.length),
+                for (final f in items)
+                  ListTile(
+                    title: Text('${f['name']}'),
+                    subtitle: Text([if (f['description'] != null) '${f['description']}', '${f['key']}'].join('\n')),
+                    isThreeLine: f['description'] != null,
+                  ),
+              ],
             ])),
       ),
+    );
+  }
+}
+
+// --- Feature groups ------------------------------------------------------------------
+
+/// Feature groups in display order (the web also shows "Test mode", which
+/// depends on the server's configuration the app cannot see).
+const featureGroups = {
+  'available': ('Available', 'Built and working. The switch turns it on or off for this school.'),
+  'included': ('Always included', 'Part of the system for every school; the switch has no effect.'),
+  'coming_soon': ('Coming soon', 'Not built yet; it can be enabled once it is released.'),
+};
+
+/// Non-empty groups in display order, each sorted by name.
+List<(String, List<Json>)> groupFeatures(List<Json> rows) => [
+      for (final key in featureGroups.keys)
+        if (rows.any((f) => (f['availability'] ?? 'available') == key))
+          (
+            key,
+            rows.where((f) => (f['availability'] ?? 'available') == key).toList()
+              ..sort((a, b) => '${a['name']}'.toLowerCase().compareTo('${b['name']}'.toLowerCase())),
+          ),
+    ];
+
+class FeatureGroupHeader extends StatelessWidget {
+  const FeatureGroupHeader(this.group, this.count, {super.key});
+  final String group;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final (title, description) = featureGroups[group]!;
+    return Container(
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('${title.toUpperCase()} ($count)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: Colors.black54)),
+        Text(description, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+      ]),
     );
   }
 }
