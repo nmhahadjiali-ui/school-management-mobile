@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/academics/academic_screens.dart';
 import '../../features/attendance/attendance_screens.dart';
 import '../../features/auth/login_screen.dart';
+import '../../features/auth/welcome_splash.dart';
 import '../../features/communication/communication_screens.dart';
 import '../../features/dashboard/home_screen.dart';
 import '../../features/finance/finance_screens.dart';
@@ -22,7 +23,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _SessionListenable(ref);
   ref.onDispose(refresh.dispose);
   return GoRouter(
-    initialLocation: '/home',
+    // Signed-in starts (app opened, or just signed in) pass through the welcome splash.
+    initialLocation: '/welcome',
     refreshListenable: refresh,
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
@@ -30,12 +32,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       final signedIn = session.value != null;
       final atAuth = state.matchedLocation == '/login' || state.matchedLocation == '/forgot-password';
       if (!signedIn) return atAuth ? null : '/login';
-      if (atAuth) return '/home';
+      if (atAuth) return '/welcome';
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/forgot-password', builder: (_, _) => const ForgotPasswordScreen()),
+      GoRoute(path: '/welcome', builder: (_, _) => const WelcomeSplash()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _MainShell(shell: shell),
         branches: [

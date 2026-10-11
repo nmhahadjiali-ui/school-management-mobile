@@ -10,6 +10,7 @@ class UserContext {
     required this.email,
     required this.schoolId,
     required this.schoolName,
+    required this.schoolLogoUrl,
     required this.timezone,
     required this.recordType,
     required this.recordId,
@@ -28,6 +29,9 @@ class UserContext {
   final String email;
   final String? schoolId;
   final String? schoolName;
+
+  /// Public URL of the school's logo (null = use the app's default logo).
+  final String? schoolLogoUrl;
   final String timezone;
   final String? recordType; // teacher | student | guardian
   final String? recordId;
@@ -52,6 +56,7 @@ class UserContext {
       email: profile['email'] as String? ?? '',
       schoolId: profile['school_id'] as String?,
       schoolName: school?['name'] as String?,
+      schoolLogoUrl: school?['logo_url'] as String?,
       timezone: school?['timezone'] as String? ?? 'UTC',
       recordType: record?['type'] as String?,
       recordId: record?['id'] as String?,
