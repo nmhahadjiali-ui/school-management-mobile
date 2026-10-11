@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                 return ListView(padding: const EdgeInsets.only(bottom: 24), children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Text('Hello, ${ctx.firstName}', style: Theme.of(context).textTheme.headlineSmall),
+                    child: Text('Hello, ${ctx.firstName} (${roleLabels[ctx.role] ?? capitalize(ctx.role)})', style: Theme.of(context).textTheme.headlineSmall),
                   ),
                   if (ctx.currentYearName != null)
                     Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('School year ${ctx.currentYearName}', style: const TextStyle(color: Colors.grey))),
